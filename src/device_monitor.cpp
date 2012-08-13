@@ -49,10 +49,6 @@ DeviceMonitor::DeviceMonitor( )
 	,	dev_monitor_( 0 )
 	,	num_disks_( 0 )
 { 
-    disk_led_map_["/dev/sda"] = 0;
-    disk_led_map_["/dev/sdb"] = 1;
-    disk_led_map_["/dev/sdc"] = 2;
-    disk_led_map_["/dev/sdd"] = 3;
 }
 	
 /////////////////////////////////////////////////////////////////////////////
@@ -76,7 +72,7 @@ void DeviceMonitor::Init( const LedControlPtr& leds ) {
 	if ( !dev_monitor_ ) throw ErrnoException( "udev_monitor_new_from_netlink" );
 	
 	// only interested in scsi devices
-	if ( udev_monitor_filter_add_match_subsystem_devtype( dev_monitor_, "scsi", "disk" ) ) {
+	if ( udev_monitor_filter_add_match_subsystem_devtype( dev_monitor_, "scsi", "scsi_device" ) ) {
 		throw ErrnoException( "udev_monitor_filter_add_match_subsystem_devtype" );
 	}
 	
@@ -133,8 +129,7 @@ void DeviceMonitor::Main( ) {
 		if ( FD_ISSET( fd_mon, &fds_read ) ) {
 			std::tr1::shared_ptr< udev_device > device( udev_monitor_receive_device( dev_monitor_ ), &udev_device_unref );
                         // make sure this is a device we want to monitor
-                        udev_device* scsi_host = udev_device_get_parent_with_subsystem_devtype( device.get(), "scsi", "scsi_host" );
-                        if ( !scsi_host ) return;
+			if (!acceptDevice_(device.get())) continue;
 	
 			const char* str = udev_device_get_action( device.get() );
 			if ( !str ) {
@@ -221,25 +216,12 @@ void DeviceMonitor::deviceRemove_( udev_device* device ) {
 /////////////////////////////////////////////////////////////////////////////
 /// device changed
 void DeviceMonitor::deviceChanged_( udev_device* device, bool state ) {
-    udev_device* scsi_host = udev_device_get_parent_with_subsystem_devtype( device, "scsi", "scsi_host" );
-    if ( !scsi_host ) return;
-	// ensure that scsi_host is attached to PCI (and not say USB)
-	udev_device* scsi_host_parent = udev_device_get_parent( scsi_host );
-	if ( !scsi_host_parent ) return;
-	
-	if ( debug ) std::cout << " scsi_host_parent: '" << udev_device_get_syspath(scsi_host_parent) << "' (" << udev_device_get_subsystem(scsi_host_parent) << ")\n";
-	if ( 0 != strcmp("pci", udev_device_get_subsystem(scsi_host_parent)) ) return;
-	
-        // dev node gives us the LED number
-        std::string devnode = udev_device_get_devnode(device);
-        if ( debug ) std::cout << " dev node: " << devnode;
-        if( disk_led_map_.count(devnode) == 0 )
-            // this dev wasn't defined in the map
-            return;
+	if (!acceptDevice_(device)) return;
 
-        int led_idx = disk_led_map_[devnode];
-	if ( debug ) std::cout << " led: " << led_idx << '\n';
-	
+	int led_idx = scsiHostIndex_(device);
+	if (led_idx < 0) return;
+	if (debug) std::cout << " device: " << udev_device_get_syspath(device) << "\n led: " << led_idx << "\n";
+
 	// finally we can play with the appopriate LED
 	if ( leds_ ) leds_->Set( LED_BLUE, led_idx, state );
         led_enabled_[led_idx] = state;
@@ -268,19 +250,14 @@ void DeviceMonitor::enumDevices_( ) {
 			), &udev_device_unref
 		);
                 if ( !device ) continue;
-		
-                udev_device* scsi_host = udev_device_get_parent_with_subsystem_devtype( device.get(), "scsi", "scsi_host" );
-                if ( !scsi_host ) return;
 
-                // dev node gives us the LED number
-                std::string devnode = udev_device_get_devnode(device.get());
-                if ( debug || verbose > 1 ) std::cout << " dev node: " << devnode;
-                if( disk_led_map_.count(devnode) == 0 )
-                    // this dev wasn't defined in the map
-                    continue;
+		if (!acceptDevice_(device.get())) continue;
 
-                leds_idx_[num_disks_] = disk_led_map_[devnode];
-                if ( debug || verbose > 1 ) std::cout << " led: " << leds_idx_[num_disks_] << "\n";
+		int led_idx = scsiHostIndex_(device.get());
+		if (led_idx < 0) continue;
+		if (debug || verbose > 1) std::cout << " device: " << udev_device_get_syspath(device.get()) << "\n led: " << led_idx << "\n";
+
+		leds_idx_[num_disks_] = led_idx;
 
                 stats_files_[num_disks_] = std::string( udev_device_get_syspath(device.get()) );
                 stats_files_[num_disks_].append( "/stat" );
@@ -300,4 +277,33 @@ void DeviceMonitor::enumDevices_( ) {
 
 		deviceAdded_( device.get() );
 	}
+}
+
+/////////////////////////////////////////////////////////////////////////////
+/// calculate disk indices using scsi_host unique_id
+int DeviceMonitor::scsiHostIndex_( udev_device* device ) {
+	const char* device_sys_path = udev_device_get_syspath(device);
+	int host_index = strstr(device_sys_path, "/host")[5] - '0';
+	if (host_index < 0) return -1;
+
+	char path[32];
+	sprintf(path, "/sys/class/scsi_host/host%d", host_index);
+	const char* dev_host_sys_path = const_cast<char*>(path);
+	udev* udev = udev_device_get_udev(device);
+	udev_device* dev_host = udev_device_new_from_syspath(udev, dev_host_sys_path);
+	int unique_id = atoi(udev_device_get_sysattr_value(dev_host, "unique_id"));
+
+	return unique_id - 1;
+}
+
+/////////////////////////////////////////////////////////////////////////////
+/// test if the given device is acceptable
+bool DeviceMonitor::acceptDevice_( udev_device* device ) {
+	udev_device* scsi_host = udev_device_get_parent_with_subsystem_devtype(device, "scsi", "scsi_host");
+	if (!scsi_host)	return false;
+
+	udev_device* scsi_host_parent = udev_device_get_parent(scsi_host);
+	if (!scsi_host_parent) return false;
+
+	return strcmp("pci", udev_device_get_subsystem(scsi_host_parent)) == 0;
 }

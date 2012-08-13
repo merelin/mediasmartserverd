@@ -60,6 +60,8 @@ protected:
 	void deviceRemove_( udev_device* device );
 	void deviceChanged_( udev_device* device, bool state );
 	void enumDevices_();
+	int scsiHostIndex_( udev_device* device );
+	bool acceptDevice_( udev_device* device );
 	
 	udev*			dev_context_;	///< udev library context
 	udev_monitor*	dev_monitor_;	///< udev monitor context
@@ -70,8 +72,6 @@ protected:
         std::string stats_files_[10];  // each disk's stat file
         bool led_enabled_[10];  // does a particular led have a disk in the bay?
         int leds_idx_[10];      // maps disk index to led index
-
-        std::map<std::string, int>  disk_led_map_;  // maps disk to led
 };
 
 #endif // INCLUDED_DEVICE_MONITOR
