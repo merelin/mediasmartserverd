@@ -33,5 +33,6 @@
 //- globals
 extern int debug;
 extern int verbose;
+extern bool activity;
 
 #endif // INCLUDED_LED_MEDIASMARTSERVERD

@@ -49,6 +49,7 @@ using std::cout;
 //- globals
 int debug = 0;		///< show debug messages
 int verbose = 0;	///< how much debugging we spew out
+bool activity = 0;	///< do we make the lights blink?
 
 
 
@@ -100,6 +101,7 @@ int show_help( ) {
 	cout << "Usage: mediasmartserverd [OPTION]...\n"
 		<< "     --brightness=X    Set LED brightness (1 to 10)\n"
 		<< " -D, --daemon          Detach and run in the background\n"
+		<< " -a, --activity        Use the bay lights as disk activity lights\n"
 		<< "     --debug           Print debug messages\n"
 		<< "     --help            Print help text\n"
 		<< " -v, --verbose         verbose (use twice to be more verbose)\n" 
@@ -219,6 +221,7 @@ int main( int argc, char* argv[] ) try {
 	const struct option long_opts[] = {
 		{ "brightness", required_argument,	0, 'b' },
 		{ "daemon",		no_argument,		0, 'D' },
+		{ "activity",		no_argument,		0, 'a' },
 		{ "debug",		no_argument,		0, 'd' },
 		{ "help",		no_argument,		0, 'h' },
 		{ "light-show",	required_argument,	0, 'S' },
@@ -231,7 +234,7 @@ int main( int argc, char* argv[] ) try {
 	
 	// pass command line arguments
 	while ( true ) {
-		const int c = getopt_long( argc, argv, "DvV", long_opts, 0 );
+		const int c = getopt_long( argc, argv, "DvaV", long_opts, 0 );
 		if ( -1 == c ) break;
 		
 		switch ( c ) {
@@ -243,6 +246,9 @@ int main( int argc, char* argv[] ) try {
 			break;
 		case 'D': // run as a daemon (background)
 			run_as_daemon = true;
+			break;
+		case 'a': // run as a daemon (background)
+			activity = true;
 			break;
 		case 'h': // help!
 			return show_help( );
@@ -315,6 +321,12 @@ int main( int argc, char* argv[] ) try {
 	
 	// re-enable annoying blinking
 	leds->SetSystemLed( LED_BLUE, LED_BLINK );
+        for( int i = 0; i < device_monitor.numDisks(); ++i )
+        {
+            int led_idx = device_monitor.ledIndex(i);
+            leds->Set( LED_RED, led_idx, false );
+            leds->Set( LED_BLUE, led_idx, false );
+        }
 	
 	return 0;
 	

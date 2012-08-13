@@ -33,6 +33,9 @@
 //- includes
 #include "led_control_base.h"
 
+#include <string>
+#include <map>
+
 //- forwards
 struct udev;
 struct udev_device;
@@ -47,17 +50,28 @@ public:
 	
 	void Init( const LedControlPtr& leds );
 	void Main( );
+
+        int numDisks()  {  return num_disks_;  }
+        std::string &statsFile( int disk_idx )  {  return stats_files_[disk_idx];  }
+        int ledIndex( int disk_idx )  {  return leds_idx_[disk_idx];  }
 	
 protected:
 	void deviceAdded_( udev_device* device );
 	void deviceRemove_( udev_device* device );
 	void deviceChanged_( udev_device* device, bool state );
-	void enumDevices_( );
+	void enumDevices_();
 	
 	udev*			dev_context_;	///< udev library context
 	udev_monitor*	dev_monitor_;	///< udev monitor context
 	
 	LedControlPtr	leds_;			///< led control interface
+
+        int num_disks_;
+        std::string stats_files_[10];  // each disk's stat file
+        bool led_enabled_[10];  // does a particular led have a disk in the bay?
+        int leds_idx_[10];      // maps disk index to led index
+
+        std::map<std::string, int>  disk_led_map_;  // maps disk to led
 };
 
 #endif // INCLUDED_DEVICE_MONITOR
