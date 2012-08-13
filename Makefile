@@ -19,6 +19,8 @@ device_monitor.o: src/device_monitor.cpp
 
 mediasmartserverd.o: src/mediasmartserverd.cpp
 	$(CXX) $(CXXFLAGS) -o $@ -c $^
-	
+
+# In case of multiarch
+# mediasmartserverd: device_monitor.o mediasmartserverd.o /usr/lib/i386-linux-gnu/libudev.so
 mediasmartserverd: device_monitor.o mediasmartserverd.o
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^
