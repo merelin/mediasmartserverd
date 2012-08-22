@@ -283,17 +283,34 @@ void DeviceMonitor::enumDevices_( ) {
 /// calculate disk indices using scsi_host unique_id
 int DeviceMonitor::scsiHostIndex_( udev_device* device ) {
 	const char* device_sys_path = udev_device_get_syspath(device);
-	int host_index = strstr(device_sys_path, "/host")[5] - '0';
-	if (host_index < 0) return -1;
+	const char host_index = strstr(device_sys_path, "/host")[5];
 
 	char path[32];
-	sprintf(path, "/sys/class/scsi_host/host%d", host_index);
+	sprintf(path, "/sys/class/scsi_host/host%c", host_index);
 	const char* dev_host_sys_path = const_cast<char*>(path);
 	udev* udev = udev_device_get_udev(device);
 	udev_device* dev_host = udev_device_new_from_syspath(udev, dev_host_sys_path);
 	int unique_id = atoi(udev_device_get_sysattr_value(dev_host, "unique_id"));
+	int scsi_host_index = unique_id - 1;
+	int hosts_to_host0 = 0;
 
-	return unique_id - 1;
+	for (char index = host_index; index >= '0'; index--)
+	{
+		char sys_path[32];
+		sprintf(sys_path, "/sys/class/scsi_host/host%c", index);
+		dev_host_sys_path = const_cast<char*>(sys_path);
+		dev_host = udev_device_new_from_syspath(udev, dev_host_sys_path);
+		if (!dev_host) continue;
+
+		hosts_to_host0++;
+	}
+
+	if (hosts_to_host0 > unique_id)
+	{
+		scsi_host_index -= hosts_to_host0 - unique_id;
+	}
+
+	return scsi_host_index;
 }
 
 /////////////////////////////////////////////////////////////////////////////
