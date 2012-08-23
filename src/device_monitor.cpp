@@ -305,9 +305,9 @@ int DeviceMonitor::scsiHostIndex_( udev_device* device ) {
 		hosts_to_host0++;
 	}
 
-	if (hosts_to_host0 > unique_id)
+	if (hosts_to_host0 > scsi_host_index)
 	{
-		scsi_host_index -= hosts_to_host0 - unique_id;
+		scsi_host_index -= hosts_to_host0 - scsi_host_index;
 	}
 
 	return scsi_host_index;
