@@ -282,34 +282,41 @@ void DeviceMonitor::enumDevices_( ) {
 /////////////////////////////////////////////////////////////////////////////
 /// calculate disk indices using scsi_host unique_id
 int DeviceMonitor::scsiHostIndex_( udev_device* device ) {
-	const char* device_sys_path = udev_device_get_syspath(device);
-	const char host_index = strstr(device_sys_path, "/host")[5];
-
-	char path[32];
-	sprintf(path, "/sys/class/scsi_host/host%c", host_index);
-	const char* dev_host_sys_path = const_cast<char*>(path);
 	udev* udev = udev_device_get_udev(device);
-	udev_device* dev_host = udev_device_new_from_syspath(udev, dev_host_sys_path);
+	std::string sys_class_prefix = "/sys/class/scsi_host/host";
+
+	std::string device_sys_path (udev_device_get_syspath(device));
+	size_t index_of = device_sys_path.find("/host") + 5;
+	const char host_index = device_sys_path.at(index_of);
+	std::string host_prefix = device_sys_path.substr(0, index_of);
+std::cout << host_prefix << host_index << "\n";
+
+	std::string dev_host_sys_path (sys_class_prefix);
+	dev_host_sys_path.append(1, host_index);
+	udev_device* dev_host = udev_device_new_from_syspath(udev, dev_host_sys_path.c_str());
 	int unique_id = atoi(udev_device_get_sysattr_value(dev_host, "unique_id"));
 	int scsi_host_index = unique_id - 1;
-	int hosts_to_host0 = 0;
+	int offset = 0;
+std::cout << " (?) scsi_host_index: " << scsi_host_index << "\n";
 
 	for (char index = host_index; index >= '0'; index--)
 	{
-		char sys_path[32];
-		sprintf(sys_path, "/sys/class/scsi_host/host%c", index);
-		dev_host_sys_path = const_cast<char*>(sys_path);
-		dev_host = udev_device_new_from_syspath(udev, dev_host_sys_path);
-		if (!dev_host) continue;
+		std::string dev_sys_path (sys_class_prefix);
+		dev_sys_path.append(1, index);
 
-		hosts_to_host0++;
+		std::string dev_path (host_prefix);
+		dev_path.append(1, index);
+
+std::cout << dev_sys_path << " <=> " << dev_path << "\n";
+		udev_device* dev_sys_class = udev_device_new_from_syspath(udev, dev_sys_path.c_str());
+		dev_host = udev_device_new_from_syspath(udev, dev_path.c_str());
+
+		if (dev_sys_class && !dev_host) offset++;
 	}
 
-	if (hosts_to_host0 > scsi_host_index)
-	{
-		scsi_host_index -= hosts_to_host0 - scsi_host_index;
-	}
+	scsi_host_index -= offset;
 
+std::cout << device_sys_path << ", offset: " << offset << ", scsi_host_index: " << scsi_host_index << "\n";
 	return scsi_host_index;
 }
 
