@@ -1,4 +1,4 @@
-SHELL = /bin/sh
+SHELL = /bin/bash
 
 # compiler and flags
 CC = gcc
@@ -7,6 +7,8 @@ FLAGS = -Wall -O2
 CFLAGS = $(FLAGS)
 CXXFLAGS = $(CFLAGS)
 LDFLAGS = -ludev
+
+LIBUDEV := $(shell if [ "`lsb_release -is`" == "Ubuntu" ]; then echo "`uname -i`-linux-gnu/"; else echo ""; fi)
 
 # build libraries and options
 all: clean mediasmartserverd
@@ -20,5 +22,5 @@ device_monitor.o: src/device_monitor.cpp
 mediasmartserverd.o: src/mediasmartserverd.cpp
 	$(CXX) $(CXXFLAGS) -o $@ -c $^
 
-mediasmartserverd: device_monitor.o mediasmartserverd.o /usr/lib/$(shell uname -i)-linux-gnu/libudev.so
+mediasmartserverd: device_monitor.o mediasmartserverd.o /usr/lib/$(LIBUDEV)libudev.so
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^
