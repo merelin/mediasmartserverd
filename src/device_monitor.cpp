@@ -289,7 +289,6 @@ int DeviceMonitor::scsiHostIndex_( udev_device* device ) {
 	size_t index_of = device_sys_path.find("/host") + 5;
 	const char host_index = device_sys_path.at(index_of);
 	std::string host_prefix = device_sys_path.substr(0, index_of);
-std::cout << host_prefix << host_index << "\n";
 
 	std::string dev_host_sys_path (sys_class_prefix);
 	dev_host_sys_path.append(1, host_index);
@@ -297,7 +296,6 @@ std::cout << host_prefix << host_index << "\n";
 	int unique_id = atoi(udev_device_get_sysattr_value(dev_host, "unique_id"));
 	int scsi_host_index = unique_id - 1;
 	int offset = 0;
-std::cout << " (?) scsi_host_index: " << scsi_host_index << "\n";
 
 	for (char index = host_index; index >= '0'; index--)
 	{
@@ -307,7 +305,6 @@ std::cout << " (?) scsi_host_index: " << scsi_host_index << "\n";
 		std::string dev_path (host_prefix);
 		dev_path.append(1, index);
 
-std::cout << dev_sys_path << " <=> " << dev_path << "\n";
 		udev_device* dev_sys_class = udev_device_new_from_syspath(udev, dev_sys_path.c_str());
 		dev_host = udev_device_new_from_syspath(udev, dev_path.c_str());
 
@@ -316,7 +313,6 @@ std::cout << dev_sys_path << " <=> " << dev_path << "\n";
 
 	scsi_host_index -= offset;
 
-std::cout << device_sys_path << ", offset: " << offset << ", scsi_host_index: " << scsi_host_index << "\n";
 	return scsi_host_index;
 }
 
