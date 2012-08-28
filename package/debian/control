@@ -1,0 +1,31 @@
+Source: mediasmartserver
+Section: utils
+Priority: extra
+Maintainer: Marlen Antonyan <merelin@gmail.com>
+Build-Depends: debhelper, libudev-dev, g++ (>= 4:4.3.1), lsb-release
+Standards-Version: 3.9.3
+Homepage: https://github.com/merelin/mediasmartserverd.git
+#Vcs-Git: git://git.debian.org/collab-maint/mediasmartserver.git
+#Vcs-Browser: http://git.debian.org/?p=collab-maint/mediasmartserver.git;a=summary
+
+Package: mediasmartserver
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, libudev0, upstart-job
+Description: This is a Linux daemon that controls the status LEDs
+ of the HP MediaSmart Server ex48X and Acer Aspire easyStore H340.
+ The driver has been published at the following forum topic:
+ .
+     http://www.mediasmartserver.net/forums/viewtopic.php?f=23&t=7720
+ .
+ The packaged version contains the original code from the repository:
+ .
+     https://bitbucket.org/adaptation/mediasmartserverd/wiki/Home
+ .
+ with activity-v2.patch.txt applied
+ and my fixes for:
+     - incorrect bay index detection
+     - incorrect hot-swap drives detection upon addition and removal.
+ .
+ I would like to thank all the guys from the topic for their work.
+ .
+ Built from the https://github.com/merelin/mediasmartserverd.git repository.
