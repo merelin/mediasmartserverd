@@ -5,6 +5,17 @@
 
 set -e
 
+if [ -x "/etc/init.d/mediasmartserver" ]; then
+    if [ -x "`which invoke-rc.d 2>/dev/null`" ]; then
+        invoke-rc.d mediasmartserver stop > /dev/null
+    else
+        /etc/init.d/mediasmartserver stop > /dev/null
+    fi
+
+    rm /etc/init.d/mediasmartserver > /dev/null
+    update-rc.d mediasmartserver remove > /dev/null
+fi
+
 # summary of how this script can be called:
 #        * <new-preinst> `install'
 #        * <new-preinst> `install' <old-version>
