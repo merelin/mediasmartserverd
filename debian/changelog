@@ -1,4 +1,4 @@
-mediasmartserver (0.4-1ubuntu2~precise) precise; urgency=low
+mediasmartserver (0.4.1-1ubuntu1~precise) precise; urgency=low
 
   * Make mediasmartserverd work on Debian squeeze and move it from System-V to Upstart
 
