@@ -1,2 +1,2 @@
 mediasmartserverd /usr/sbin
-package/etc/init/mediasmartserver.conf /etc/init
+etc/init/mediasmartserver.conf /etc/init
