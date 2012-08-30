@@ -1,5 +1,5 @@
-mediasmartserver (0.4-1ubuntu1~precise1) precise; urgency=low
+mediasmartserver (0.4-1ubuntu2~precise) precise; urgency=low
 
-  * Initial release
+  * Make mediasmartserverd work on Debian squeeze and move it from System-V to Upstart
 
  -- Marlen Antonyan (A launchpad OpenPGP key) <merelin@gmail.com>  Mon, 27 Aug 2012 13:56:58 +0400
