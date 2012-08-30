@@ -29,7 +29,7 @@ prepare-for-packaging:
 	@if [ "$(PACKAGE_VERSION)" != "" ]; then \
 		cd ..; \
 		mkdir mediasmartserver; \
-		cp -RLv mediasmartserverd/{LICENSE,Makefile,readme.txt,README.md,src,package/*} mediasmartserver; \
+		cp -RLv mediasmartserverd/{LICENSE,Makefile,readme.txt,README.md,src,debian,etc} mediasmartserver; \
 		tar cfz mediasmartserver-$(PACKAGE_VERSION).tar.gz mediasmartserver; \
 		rm -rf mediasmartserver; \
 		bzr dh-make mediasmartserver $(PACKAGE_VERSION) mediasmartserver-$(PACKAGE_VERSION).tar.gz; \
