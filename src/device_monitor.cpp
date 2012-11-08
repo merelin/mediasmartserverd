@@ -236,7 +236,8 @@ void DeviceMonitor::enumDevices_( ) {
 	std::tr1::shared_ptr< udev_enumerate > dev_enum( udev_enumerate_new( dev_context_ ), &udev_enumerate_unref );
 	
 	// only interested in scsi_device's
-	udev_enumerate_add_match_property( dev_enum.get(), "DEVTYPE", "disk" );
+	udev_enumerate_add_match_subsystem( dev_enum.get(), "block" );
+	udev_enumerate_add_match_property( dev_enum.get(), "ID_BUS", "ata" );
 	udev_enumerate_scan_devices( dev_enum.get() ); // start
 	
 	//- enumerate list
@@ -286,9 +287,21 @@ int DeviceMonitor::scsiHostIndex_( udev_device* device ) {
 	std::string sys_class_prefix = "/sys/class/scsi_host/host";
 
 	std::string device_sys_path (udev_device_get_syspath(device));
-	size_t index_of = device_sys_path.find("/host") + 5;
-	const char host_index = device_sys_path.at(index_of);
-	std::string host_prefix = device_sys_path.substr(0, index_of);
+
+	std::string host_prefix ("");
+	char host_index = 0;
+	bool use_ata = false;
+
+	size_t index_of = device_sys_path.find("/ata");
+	if (index_of != std::string::npos) {
+		host_prefix.append(device_sys_path.substr(0, index_of + 4));
+		host_index = device_sys_path.at(index_of + 10);
+		use_ata = true;
+	} else {
+		index_of = device_sys_path.find("/host") + 5;
+		host_prefix.append(device_sys_path.substr(0, index_of));
+		host_index = device_sys_path.at(index_of);
+	}
 
 	std::string dev_host_sys_path (sys_class_prefix);
 	dev_host_sys_path.append(1, host_index);
@@ -303,6 +316,12 @@ int DeviceMonitor::scsiHostIndex_( udev_device* device ) {
 		dev_sys_path.append(1, index);
 
 		std::string dev_path (host_prefix);
+
+		if (use_ata) {
+			dev_path.append(1, index + 1);
+			dev_path.append("/host");
+		}
+
 		dev_path.append(1, index);
 
 		udev_device* dev_sys_class = udev_device_new_from_syspath(udev, dev_sys_path.c_str());
@@ -319,11 +338,6 @@ int DeviceMonitor::scsiHostIndex_( udev_device* device ) {
 /////////////////////////////////////////////////////////////////////////////
 /// test if the given device is acceptable
 bool DeviceMonitor::acceptDevice_( udev_device* device ) {
-	udev_device* scsi_host = udev_device_get_parent_with_subsystem_devtype(device, "scsi", "scsi_host");
-	if (!scsi_host)	return false;
-
-	udev_device* scsi_host_parent = udev_device_get_parent(scsi_host);
-	if (!scsi_host_parent) return false;
-
-	return strcmp("pci", udev_device_get_subsystem(scsi_host_parent)) == 0;
+	return strcmp("ata", udev_device_get_property_value(device, "ID_BUS")) == 0
+		&& strcmp("disk", udev_device_get_property_value(device, "DEVTYPE")) == 0;
 }
