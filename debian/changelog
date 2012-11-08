@@ -1,6 +1,6 @@
-mediasmartserver (0.4.1-1ubuntu1~precise) precise; urgency=low
+mediasmartserver (0.5.1-1ubuntu1~quantal) quantal; urgency=low
 
-  * Make mediasmartserverd work on Debian squeeze and move it from System-V to Upstart
+  * SCSI host index detection and SATA drives detection re-worked
 
  -- Marlen Antonyan (A launchpad OpenPGP key) <merelin@gmail.com>  Mon, 27 Aug 2012 13:56:58 +0400
 
