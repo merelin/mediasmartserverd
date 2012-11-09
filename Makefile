@@ -33,7 +33,7 @@ prepare-for-packaging:
 		bzr dh-make mediasmartserver $(PACKAGE_VERSION) mediasmartserver-$(PACKAGE_VERSION).tar.gz; \
 		rm -rf mediasmartserver/debian/{*.ex,*.EX,README.Debian,README.source}; \
 		cd mediasmartserver; \
-		bzr commit -m "Initial commit of Debian packaging."; \
+		bzr commit -m "Packaging version: $(PACKAGE_VERSION)"; \
 	fi
 
 package-unsigned: prepare-for-packaging
