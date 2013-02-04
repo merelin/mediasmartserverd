@@ -28,14 +28,21 @@
 ///
 /////////////////////////////////////////////////////////////////////////////
 
+/// Changelog - 2012-02-04 - Kai Hendrik Behrends
+///
+/// Added system vendor and product name detection to get_led_interface().
+/// Neccessary for adding H341 without breaking HPEX485.
+
 //- includes
 #include "errno_exception.h"
 #include "device_monitor.h"
 #include "led_acerh340.h"
+#include "led_acerh341.h"
 #include "led_hpex485.h"
 #include <iomanip>
 #include <iostream>
 #include <string>
+#include <stdio.h>
 
 #include <getopt.h>
 #include <pwd.h>
@@ -79,18 +86,64 @@ void drop_priviledges( ) {
 }
 
 /////////////////////////////////////////////////////////////////////////////
+// read a single line without linebreak from a file
+const char * ReadSingleLineFromFile(const char * fileName) {
+	FILE * fp;
+    char * line = NULL;
+    char * br = NULL;
+    size_t len = 0;
+    
+    fp = fopen(fileName, "r");
+   
+    if ( fp != NULL && getline(&line, &len, fp) != -1){
+    	// remove trailing \n
+    	br = strrchr(line, '\n');
+		if (br) *br = '\0';
+        return line;
+    }
+    return "";
+}
+
+/////////////////////////////////////////////////////////////////////////////
+// compare the system vendor information
+bool IsSystemVendor(const char * systemVendor) {
+	return strcmp(ReadSingleLineFromFile("/sys/class/dmi/id/sys_vendor"), systemVendor) == 0;
+}
+
+/////////////////////////////////////////////////////////////////////////////
+// compare the product name
+bool IsProductName(const char * productName) {
+	return strcmp(ReadSingleLineFromFile("/sys/class/dmi/id/product_name"), productName) == 0;
+}
+
+/////////////////////////////////////////////////////////////////////////////
 /// attempt to get an LED control interface
 LedControlPtr get_led_interface( ) {
 	LedControlPtr control;
 	
-	// H340
-	control.reset( new LedAcerH340 );
-	if ( control->Init( ) ) return control;
-	
-	// HP48X
-	control.reset( new LedHpEx48X );
-	if ( control->Init( ) ) return control;
-	
+	if (IsSystemVendor("Acer")) {
+		if(verbose > 0) cout << "Recoqnized SystemVendor: \"Acer\"\n";
+		if (IsProductName("Aspire easyStore H340")) { //Please verify if you have the hardware.
+			// H340
+			if(verbose > 0) cout << "Recoqnized ProductName: \"Aspire easyStore H340\"\n";
+			control.reset( new LedAcerH340 );
+			if ( control->Init( ) ) return control;
+		}
+		if (IsProductName("Aspire easyStore H341")) {
+			// H341
+			if(verbose > 0) cout << "Recoqnized ProductName: \"Aspire easyStore H341\"\n";
+			control.reset( new LedAcerH341 );
+			if ( control->Init( ) ) return control;
+		}
+	}
+	else { // HP // If you have the system vendor and product name please add.
+		// HP48X
+		if(verbose > 0) cout << "Unrecognized SystemVendor: \"" 
+			<< ReadSingleLineFromFile("/sys/class/dmi/id/sys_vendor") 
+			<< "\"\n Assuming HP\n";
+		control.reset( new LedHpEx48X );
+		if ( control->Init( ) ) return control;
+	}
 	
 	return LedControlPtr( );
 }
@@ -296,9 +349,9 @@ int main( int argc, char* argv[] ) try {
 	
 	cout << "Found: " << leds->Desc( ) << '\n';
 	
-	// disable annoying blinking guy
+	// disable annoying blinking guy // changed to disabling completely
 	leds->SetSystemLed( LED_RED, false );
-	leds->SetSystemLed( LED_BLUE, true );
+	leds->SetSystemLed( LED_BLUE, false );
 	
 	//
 	if ( brightness >= 0 ) leds->SetBrightness( brightness );
@@ -319,14 +372,14 @@ int main( int argc, char* argv[] ) try {
 	// begin monitoring
 	device_monitor.Main( );
 	
-	// re-enable annoying blinking
-	leds->SetSystemLed( LED_BLUE, LED_BLINK );
-        for( int i = 0; i < device_monitor.numDisks(); ++i )
-        {
-            int led_idx = device_monitor.ledIndex(i);
-            leds->Set( LED_RED, led_idx, false );
-            leds->Set( LED_BLUE, led_idx, false );
-        }
+	// re-enable annoying blinking // leaving it disabled
+	//leds->SetSystemLed( LED_BLUE, LED_BLINK );
+    for( int i = 0; i < device_monitor.numDisks(); ++i )
+    {
+        int led_idx = device_monitor.ledIndex(i);
+        leds->Set( LED_RED, led_idx, false );
+        leds->Set( LED_BLUE, led_idx, false );
+    }
 	
 	return 0;
 	
