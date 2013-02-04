@@ -32,6 +32,7 @@
 ///
 /// Added system vendor and product name detection to get_led_interface().
 /// Neccessary for adding H341 without breaking HPEX485.
+/// Disabled SystemLed.
 
 //- includes
 #include "errno_exception.h"

@@ -30,7 +30,7 @@
 
 /// Changelog - 2012-02-04 - Kai Hendrik Behrends
 ///
-/// Copy of led_acerh340 created and modified for the h341 according to the post
+/// Copy of src/led_acerh340.h created and modified for the Acer Aspire easyStore H341 according to the post
 /// by sparkvolt on http:mediasmartserver.net as seen here:
 /// http://www.mediasmartserver.net/forums/viewtopic.php?f=23&t=7720&sid=5f7634569b817c79e9fff21012e74f46&start=90#p94053
 
