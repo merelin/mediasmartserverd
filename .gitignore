@@ -1,2 +1,5 @@
 /.project
 /.gitignore
+*.o
+*~
+mediasmartserverd

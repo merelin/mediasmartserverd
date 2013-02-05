@@ -91,15 +91,16 @@ void drop_priviledges( ) {
 const char * ReadSingleLineFromFile(const char * fileName) {
 	FILE * fp;
     char * line = NULL;
-    char * br = NULL;
+    char * end = NULL;
     size_t len = 0;
     
     fp = fopen(fileName, "r");
    
     if ( fp != NULL && getline(&line, &len, fp) != -1){
-    	// remove trailing \n
-    	br = strrchr(line, '\n');
-		if (br) *br = '\0';
+    	// trim string
+    	end = line + strlen(line) - 1;
+  		while(end > line && isspace(*end)) end--;
+  		*(end+1) = '\0';
         return line;
     }
     return "";
@@ -122,17 +123,23 @@ bool IsProductName(const char * productName) {
 LedControlPtr get_led_interface( ) {
 	LedControlPtr control;
 	
+	if(verbose > 0) cout << "--- SystemVendor: \"" 
+		<< ReadSingleLineFromFile("/sys/class/dmi/id/sys_vendor")
+		<< "\" - ProductName: \""
+		<< ReadSingleLineFromFile("/sys/class/dmi/id/product_name")
+		<< "\" ---\n";
+	
 	if (IsSystemVendor("Acer")) {
-		if(verbose > 0) cout << "Recoqnized SystemVendor: \"Acer\"\n";
+		if(verbose > 0) cout << "Recognized SystemVendor: \"Acer\"\n";
 		if (IsProductName("Aspire easyStore H340")) { //Please verify if you have the hardware.
 			// H340
-			if(verbose > 0) cout << "Recoqnized ProductName: \"Aspire easyStore H340\"\n";
+			if(verbose > 0) cout << "Recognized ProductName: \"Aspire easyStore H340\"\n";
 			control.reset( new LedAcerH340 );
 			if ( control->Init( ) ) return control;
 		}
 		if (IsProductName("Aspire easyStore H341")) {
 			// H341
-			if(verbose > 0) cout << "Recoqnized ProductName: \"Aspire easyStore H341\"\n";
+			if(verbose > 0) cout << "Recognized ProductName: \"Aspire easyStore H341\"\n";
 			control.reset( new LedAcerH341 );
 			if ( control->Init( ) ) return control;
 		}
@@ -141,7 +148,7 @@ LedControlPtr get_led_interface( ) {
 		// HP48X
 		if(verbose > 0) cout << "Unrecognized SystemVendor: \"" 
 			<< ReadSingleLineFromFile("/sys/class/dmi/id/sys_vendor") 
-			<< "\"\n Assuming HP\n";
+			<< "\"\nAssuming HP\n";
 		control.reset( new LedHpEx48X );
 		if ( control->Init( ) ) return control;
 	}
