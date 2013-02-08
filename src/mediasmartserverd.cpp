@@ -92,18 +92,20 @@ void drop_priviledges( ) {
 const char *GetUdevDeviceAttribute(const char *subsystem, const char *sysname, const char *sysattr) {
 	struct udev *udev;
 	struct udev_device *device;
-	const char *attributeValue;
+	std::string value;
 
 	udev = udev_new();
 	if (!udev) throw ErrnoException("udev_new");
 
 	device = udev_device_new_from_subsystem_sysname(udev, subsystem, sysname);
-	attributeValue = strdup(udev_device_get_sysattr_value(device, sysattr));
+	value = udev_device_get_sysattr_value(device, sysattr);
+	value.erase(value.begin(), std::find_if(value.begin(), value.end(), std::not1(std::ptr_fun<int, int>(std::isspace))));
+	value.erase(std::find_if(value.rbegin(), value.rend(), std::not1(std::ptr_fun<int, int>(std::isspace))).base(), value.end());
 	//free
 	udev_device_unref(device);
 	udev_unref(udev);
 	
-	return attributeValue;
+	return strdup(value.c_str());
 }
 
 /////////////////////////////////////////////////////////////////////////////
