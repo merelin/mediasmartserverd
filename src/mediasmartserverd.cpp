@@ -28,16 +28,25 @@
 ///
 /////////////////////////////////////////////////////////////////////////////
 
+/// Changelog - 2012-02-04 - Kai Hendrik Behrends
+///
+/// Added system vendor and product name detection to get_led_interface().
+/// Neccessary for adding H341 without breaking HPEX485.
+/// Disabled SystemLed.
+
 //- includes
 #include "errno_exception.h"
 #include "device_monitor.h"
 #include "led_acerh340.h"
+#include "led_acerh341.h"
 #include "led_hpex485.h"
 #include <iomanip>
 #include <iostream>
 #include <string>
+#include <stdio.h>
 
 #include <getopt.h>
+#include <libudev.h>
 #include <pwd.h>
 #include <signal.h>
 #include <string.h>
@@ -79,19 +88,62 @@ void drop_priviledges( ) {
 }
 
 /////////////////////////////////////////////////////////////////////////////
+// get attribute from udev device specified by subsytem an device name
+const char *GetUdevDeviceAttribute(const char *subsystem, const char *sysname, const char *sysattr) {
+	struct udev *udev;
+	struct udev_device *device;
+	std::string value;
+
+	udev = udev_new();
+	if (!udev) throw ErrnoException("udev_new");
+
+	device = udev_device_new_from_subsystem_sysname(udev, subsystem, sysname);
+	value = udev_device_get_sysattr_value(device, sysattr);
+	value.erase(value.begin(), std::find_if(value.begin(), value.end(), std::not1(std::ptr_fun<int, int>(std::isspace))));
+	value.erase(std::find_if(value.rbegin(), value.rend(), std::not1(std::ptr_fun<int, int>(std::isspace))).base(), value.end());
+	//free
+	udev_device_unref(device);
+	udev_unref(udev);
+	
+	return strdup(value.c_str());
+}
+
+/////////////////////////////////////////////////////////////////////////////
 /// attempt to get an LED control interface
 LedControlPtr get_led_interface( ) {
 	LedControlPtr control;
 	
-	// H340
-	control.reset( new LedAcerH340 );
-	if ( control->Init( ) ) return control;
+	const char *systemVendor = GetUdevDeviceAttribute("dmi", "id", "sys_vendor");
+	const char *productName = GetUdevDeviceAttribute("dmi", "id", "product_name");
 	
-	// HP48X
-	control.reset( new LedHpEx48X );
-	if ( control->Init( ) ) return control;
+	if(verbose > 0) cout << "--- SystemVendor: \"" << systemVendor
+		<< "\" - ProductName: \"" << productName << "\" ---\n";
 	
-	
+	if (strcmp(systemVendor, "Acer") == 0) {
+		if(verbose > 0) cout << "Recognized SystemVendor: \"Acer\"\n";
+		if (strcmp(productName, "Aspire easyStore H340") == 0) {
+			// H340
+			if(verbose > 0) cout << "Recognized ProductName: \"Aspire easyStore H340\"\n";
+			control.reset( new LedAcerH340 );
+			if ( control->Init( ) ) return control;
+		}
+		if (strcmp(productName, "Aspire easyStore H341") == 0) {
+			// H341
+			if(verbose > 0) cout << "Recognized ProductName: \"Aspire easyStore H341\"\n";
+			control.reset( new LedAcerH341 );
+			if ( control->Init( ) ) return control;
+		}
+	}
+	else { // HP // If you have the system vendor and product name please add.
+		// HP48X
+		if(verbose > 0) cout << "Unrecognized SystemVendor: \"" 
+			<< systemVendor << "\"\nAssuming HP\n";
+		control.reset( new LedHpEx48X );
+		if ( control->Init( ) ) return control;
+	}
+	//free
+	free((char*)systemVendor);
+	free((char*)productName);
 	return LedControlPtr( );
 }
 
@@ -296,9 +348,9 @@ int main( int argc, char* argv[] ) try {
 	
 	cout << "Found: " << leds->Desc( ) << '\n';
 	
-	// disable annoying blinking guy
+	// disable annoying blinking guy // changed to disabling completely
 	leds->SetSystemLed( LED_RED, false );
-	leds->SetSystemLed( LED_BLUE, true );
+	leds->SetSystemLed( LED_BLUE, false );
 	
 	//
 	if ( brightness >= 0 ) leds->SetBrightness( brightness );
@@ -319,14 +371,14 @@ int main( int argc, char* argv[] ) try {
 	// begin monitoring
 	device_monitor.Main( );
 	
-	// re-enable annoying blinking
-	leds->SetSystemLed( LED_BLUE, LED_BLINK );
-        for( int i = 0; i < device_monitor.numDisks(); ++i )
-        {
-            int led_idx = device_monitor.ledIndex(i);
-            leds->Set( LED_RED, led_idx, false );
-            leds->Set( LED_BLUE, led_idx, false );
-        }
+	// re-enable annoying blinking // leaving it disabled
+	//leds->SetSystemLed( LED_BLUE, LED_BLINK );
+    for( int i = 0; i < device_monitor.numDisks(); ++i )
+    {
+        int led_idx = device_monitor.ledIndex(i);
+        leds->Set( LED_RED, led_idx, false );
+        leds->Set( LED_BLUE, led_idx, false );
+    }
 	
 	return 0;
 	
