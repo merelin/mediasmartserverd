@@ -46,6 +46,7 @@
 #include <stdio.h>
 
 #include <getopt.h>
+#include <libudev.h>
 #include <pwd.h>
 #include <signal.h>
 #include <string.h>
@@ -87,35 +88,22 @@ void drop_priviledges( ) {
 }
 
 /////////////////////////////////////////////////////////////////////////////
-// read a single line without linebreak from a file
-const char * ReadSingleLineFromFile(const char * fileName) {
-	FILE * fp;
-    char * line = NULL;
-    char * end = NULL;
-    size_t len = 0;
-    
-    fp = fopen(fileName, "r");
-   
-    if ( fp != NULL && getline(&line, &len, fp) != -1){
-    	// trim string
-    	end = line + strlen(line) - 1;
-  		while(end > line && isspace(*end)) end--;
-  		*(end+1) = '\0';
-        return line;
-    }
-    return "";
-}
+// get attribute from udev device specified by subsytem an device name
+const char *GetUdevDeviceAttribute(const char *subsystem, const char *sysname, const char *sysattr) {
+	struct udev *udev;
+	struct udev_device *device;
+	const char *attributeValue;
 
-/////////////////////////////////////////////////////////////////////////////
-// compare the system vendor information
-bool IsSystemVendor(const char * systemVendor) {
-	return strcmp(ReadSingleLineFromFile("/sys/class/dmi/id/sys_vendor"), systemVendor) == 0;
-}
+	udev = udev_new();
+	if (!udev) throw ErrnoException("udev_new");
 
-/////////////////////////////////////////////////////////////////////////////
-// compare the product name
-bool IsProductName(const char * productName) {
-	return strcmp(ReadSingleLineFromFile("/sys/class/dmi/id/product_name"), productName) == 0;
+	device = udev_device_new_from_subsystem_sysname(udev, subsystem, sysname);
+	attributeValue = strdup(udev_device_get_sysattr_value(device, sysattr));
+	//free
+	udev_device_unref(device);
+	udev_unref(udev);
+	
+	return attributeValue;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -123,21 +111,21 @@ bool IsProductName(const char * productName) {
 LedControlPtr get_led_interface( ) {
 	LedControlPtr control;
 	
-	if(verbose > 0) cout << "--- SystemVendor: \"" 
-		<< ReadSingleLineFromFile("/sys/class/dmi/id/sys_vendor")
-		<< "\" - ProductName: \""
-		<< ReadSingleLineFromFile("/sys/class/dmi/id/product_name")
-		<< "\" ---\n";
+	const char *systemVendor = GetUdevDeviceAttribute("dmi", "id", "sys_vendor");
+	const char *productName = GetUdevDeviceAttribute("dmi", "id", "product_name");
 	
-	if (IsSystemVendor("Acer")) {
+	if(verbose > 0) cout << "--- SystemVendor: \"" << systemVendor
+		<< "\" - ProductName: \"" << productName << "\" ---\n";
+	
+	if (strcmp(systemVendor, "Acer") == 0) {
 		if(verbose > 0) cout << "Recognized SystemVendor: \"Acer\"\n";
-		if (IsProductName("Aspire easyStore H340")) { //Please verify if you have the hardware.
+		if (strcmp(productName, "Aspire easyStore H340") == 0) {
 			// H340
 			if(verbose > 0) cout << "Recognized ProductName: \"Aspire easyStore H340\"\n";
 			control.reset( new LedAcerH340 );
 			if ( control->Init( ) ) return control;
 		}
-		if (IsProductName("Aspire easyStore H341")) {
+		if (strcmp(productName, "Aspire easyStore H341") == 0) {
 			// H341
 			if(verbose > 0) cout << "Recognized ProductName: \"Aspire easyStore H341\"\n";
 			control.reset( new LedAcerH341 );
@@ -147,12 +135,13 @@ LedControlPtr get_led_interface( ) {
 	else { // HP // If you have the system vendor and product name please add.
 		// HP48X
 		if(verbose > 0) cout << "Unrecognized SystemVendor: \"" 
-			<< ReadSingleLineFromFile("/sys/class/dmi/id/sys_vendor") 
-			<< "\"\nAssuming HP\n";
+			<< systemVendor << "\"\nAssuming HP\n";
 		control.reset( new LedHpEx48X );
 		if ( control->Init( ) ) return control;
 	}
-	
+	//free
+	free((char*)systemVendor);
+	free((char*)productName);
 	return LedControlPtr( );
 }
 
