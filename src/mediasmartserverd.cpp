@@ -38,6 +38,7 @@
 #include "errno_exception.h"
 #include "device_monitor.h"
 #include "led_acerh340.h"
+#include "led_acer_altos_m2.h"
 #include "led_acerh341.h"
 #include "led_hpex485.h"
 #include <iomanip>
@@ -125,6 +126,12 @@ LedControlPtr get_led_interface( ) {
 			// H340
 			if(verbose > 0) cout << "Recognized ProductName: \"Aspire easyStore H340\"\n";
 			control.reset( new LedAcerH340 );
+			if ( control->Init( ) ) return control;
+		}
+		if (strcmp(productName, "Altos easyStore M2") == 0) {
+			// Altos M2
+			if(verbose > 0) cout << "Recognized ProductName: \"Altos easyStore M2\"\n";
+			control.reset( new LedAcerAltosM2 );
 			if ( control->Init( ) ) return control;
 		}
 		if (strcmp(productName, "Aspire easyStore H341") == 0) {
