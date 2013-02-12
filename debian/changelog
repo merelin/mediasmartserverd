@@ -1,6 +1,6 @@
-mediasmartserver (0.5.1-1ubuntu1~quantal) quantal; urgency=low
+mediasmartserver (0.5.3-1ubuntu1~quantal) quantal; urgency=low
 
-  * SCSI host index detection and SATA drives detection re-worked
+  * Hardware Support for the Acer Altos easyStore M2
 
- -- Marlen Antonyan (A launchpad OpenPGP key) <merelin@gmail.com>  Mon, 27 Aug 2012 13:56:58 +0400
+ -- Marlen Antonyan (A launchpad OpenPGP key) <merelin@gmail.com>  Tue, 12 Feb 2013 09:53:49 +0400
 
