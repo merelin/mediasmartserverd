@@ -48,3 +48,8 @@ package-signed: prepare-for-packaging
 		bzr builddeb -S; \
 	fi
 
+# When rejected because of *.orig.tar.gz:
+#    1) Download the pristine original tarball
+#    2) cd ../mediasmartserver;
+#    3) debuild -S
+
