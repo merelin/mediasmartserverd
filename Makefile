@@ -17,10 +17,13 @@ clean:
 device_monitor.o: src/device_monitor.cpp
 	$(CXX) $(CXXFLAGS) -o $@ -c $^
 
+update_monitor.o: src/update_monitor.cpp
+	$(CXX) $(CXXFLAGS) -o $@ -c $^ -pthread
+
 mediasmartserverd.o: src/mediasmartserverd.cpp
 	$(CXX) $(CXXFLAGS) -o $@ -c $^
 
-mediasmartserverd: device_monitor.o mediasmartserverd.o
+mediasmartserverd: device_monitor.o update_monitor.o mediasmartserverd.o
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDFLAGS)
 
 prepare-for-packaging:
