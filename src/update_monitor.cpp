@@ -10,7 +10,10 @@
  * Changelog:
  *
  * 2013-02-07 - Kai Hendrik Behrends
- *  - Initialy created file. 
+ *  - Initialy created file.
+ *
+ * 2013-02-16 - Kai Hendrik Behrends
+ *  - Fixed reading of update string returned by apt-check.
  *
  *
  * Copyright (c) 2013 Kai Hendrik Behrends
@@ -218,9 +221,8 @@ void* UpdateMonitor::MonitorThreadProc(void* /*arg*/)
  */
 bool UpdateMonitor::GetUpdateStatus(int* update_count, int* security_update_count)
 {
-	//"echo" makes sure the string is terminated. 
-	//For some reason stderr is anoying us so we redirect it to "/dev/null".
-	FILE* apt_check = popen("echo $(/usr/lib/update-notifier/apt-check 2>/dev/null)", "r"); 	
+	//For some reason stderr has the result not stdout so we redirect it to stdout.
+	FILE* apt_check = popen("/usr/lib/update-notifier/apt-check 2>&1", "r");
 	if (apt_check == NULL)
 	{
 		if (verbose > 1)
@@ -244,6 +246,15 @@ bool UpdateMonitor::GetUpdateStatus(int* update_count, int* security_update_coun
 	}
 	std::string str_line(line);
 	int pos_delim = str_line.find(";");
+	if (pos_delim > (int)str_line.length())
+	{
+		if (verbose > 1)
+		{
+			std::cout << "Couldn't find seperator ; in apt-check string: \""
+				<< line << "\"\n";
+		}
+		return false;
+	}
 	*update_count = atoi(str_line.substr(0, pos_delim).c_str());
 	*security_update_count = atoi(str_line.substr(pos_delim+1).c_str());
 	return true;
