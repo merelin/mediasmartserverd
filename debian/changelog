@@ -1,6 +1,6 @@
-mediasmartserver (0.5.3-1ubuntu1~quantal) quantal; urgency=low
+mediasmartserver (0.5.4-1ubuntu1~quantal) quantal; urgency=low
 
-  * Hardware Support for the Acer Altos easyStore M2
+  * Added update monitor that will set the system LED if updates are available.
 
- -- Marlen Antonyan (A launchpad OpenPGP key) <merelin@gmail.com>  Tue, 12 Feb 2013 09:53:49 +0400
+ -- Marlen Antonyan (A launchpad OpenPGP key) <merelin@gmail.com>  Mon, 18 Feb 2013 22:35:18 +0400
 
