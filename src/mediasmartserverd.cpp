@@ -28,11 +28,15 @@
 ///
 /////////////////////////////////////////////////////////////////////////////
 
-/// Changelog - 2012-02-04 - Kai Hendrik Behrends
+/// Changelog
 ///
-/// Added system vendor and product name detection to get_led_interface().
-/// Neccessary for adding H341 without breaking HPEX485.
-/// Disabled SystemLed.
+/// 2012-02-04 - Kai Hendrik Behrends
+///  - Added system vendor and product name detection to get_led_interface().
+///    Neccessary for adding H341 without breaking HPEX485.
+///  - Disabled SystemLed.
+///
+/// 2012-02-07 - Kai Hendrik Behrends
+///  - Added update monitor
 
 //- includes
 #include "errno_exception.h"
@@ -41,6 +45,7 @@
 #include "led_acer_altos_m2.h"
 #include "led_acerh341.h"
 #include "led_hpex485.h"
+#include "update_monitor.h"
 #include <iomanip>
 #include <iostream>
 #include <string>
@@ -163,6 +168,7 @@ int show_help( ) {
 		<< " -a, --activity        Use the bay lights as disk activity lights\n"
 		<< "     --debug           Print debug messages\n"
 		<< "     --help            Print help text\n"
+		<< " -u  --update-monitor  Use system LED as update notification light\n"
 		<< " -v, --verbose         verbose (use twice to be more verbose)\n" 
 		<< " -V, --version         Show version number\n" 
 	;
@@ -275,25 +281,27 @@ int main( int argc, char* argv[] ) try {
 	int mount_usb = -1;
 	bool run_as_daemon = false;
 	bool xmas = false;
+	bool run_update_monitor = false;
 	
 	// long command line arguments
 	const struct option long_opts[] = {
-		{ "brightness", required_argument,	0, 'b' },
-		{ "daemon",		no_argument,		0, 'D' },
-		{ "activity",		no_argument,		0, 'a' },
-		{ "debug",		no_argument,		0, 'd' },
-		{ "help",		no_argument,		0, 'h' },
-		{ "light-show",	required_argument,	0, 'S' },
-		{ "usb",		required_argument,	0, 'U' },
-		{ "verbose",	no_argument,		0, 'v' },
-		{ "version",	no_argument,		0, 'V' },
-		{ "xmas",		no_argument,		0, 'X' },
+		{ "brightness",     required_argument, 0, 'b' },
+		{ "daemon",         no_argument,       0, 'D' },
+		{ "activity",       no_argument,       0, 'a' },
+		{ "debug",          no_argument,       0, 'd' },
+		{ "help",           no_argument,       0, 'h' },
+		{ "light-show",     required_argument, 0, 'S' },
+		{ "update-monitor", no_argument,       0, 'u' },
+		{ "usb",            required_argument, 0, 'U' },
+		{ "verbose",        no_argument,       0, 'v' },
+		{ "version",        no_argument,       0, 'V' },
+		{ "xmas",           no_argument,       0, 'X' },
 		{ 0, 0, 0, 0 },
 	};
 	
 	// pass command line arguments
 	while ( true ) {
-		const int c = getopt_long( argc, argv, "DvaV", long_opts, 0 );
+		const int c = getopt_long( argc, argv, "aDuvV", long_opts, 0 );
 		if ( -1 == c ) break;
 		
 		switch ( c ) {
@@ -313,6 +321,9 @@ int main( int argc, char* argv[] ) try {
 			return show_help( );
 		case 'S': // light-show
 			if ( optarg ) light_show = atoi( optarg );
+			break;
+		case 'u': //Use system LED as update notification light.
+			run_update_monitor = true;
 			break;
 		case 'U': // mount/unmount USB device
 			if ( optarg ) mount_usb = atoi( optarg );
@@ -371,12 +382,18 @@ int main( int argc, char* argv[] ) try {
 	
 	if ( light_show > 0 ) return run_light_show( leds, light_show );
 	
+	// initialise update monitor
+	UpdateMonitor update_monitor(leds);
+	if (run_update_monitor) update_monitor.Start();
+	
 	// initialise device monitor
 	DeviceMonitor device_monitor;
 	device_monitor.Init( leds );
 	
 	// begin monitoring
 	device_monitor.Main( );
+	
+	if (run_update_monitor) update_monitor.Stop();
 	
 	// re-enable annoying blinking // leaving it disabled
 	//leds->SetSystemLed( LED_BLUE, LED_BLINK );
