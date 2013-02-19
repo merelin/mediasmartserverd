@@ -184,16 +184,18 @@ void* UpdateMonitor::MonitorThreadProc(void* /*arg*/)
 		{
 			//Red
 			leds_->SetSystemLed(LED_RED, true);
+			leds_->SetSystemLed(LED_BLUE, false);
 		}
 		else if (security_update_count > 0)
 		{
-			//Purpel
+			//Purple
 			leds_->SetSystemLed(LED_BLUE | LED_RED, true);
 		}
 		else if (update_count > 0)
 		{
 			//Blue
 			leds_->SetSystemLed(LED_BLUE, true);
+			leds_->SetSystemLed(LED_RED, false);
 		}
 		else //Nothing
 		{
