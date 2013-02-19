@@ -1,6 +1,6 @@
-mediasmartserver (0.5.4-1ubuntu1~quantal) quantal; urgency=low
+mediasmartserver (0.5.4-2ubuntu1~quantal) quantal; urgency=low
 
-  * Added update monitor that will set the system LED if updates are available.
+  * Fix confused section for update-notifier-common
 
- -- Marlen Antonyan (A launchpad OpenPGP key) <merelin@gmail.com>  Mon, 18 Feb 2013 22:35:18 +0400
+ -- Marlen Antonyan (A launchpad OpenPGP key) <merelin@gmail.com>  Tue, 19 Feb 2013 12:45:18 +0400
 
