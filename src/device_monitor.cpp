@@ -284,53 +284,32 @@ void DeviceMonitor::enumDevices_( ) {
 /// calculate disk indices using scsi_host unique_id
 int DeviceMonitor::scsiHostIndex_( udev_device* device ) {
 	udev* udev = udev_device_get_udev(device);
-	std::string sys_class_prefix = "/sys/class/scsi_host/host";
-
 	std::string device_sys_path (udev_device_get_syspath(device));
-
-	std::string host_prefix ("");
-	char host_index = 0;
-	bool use_ata = false;
+	std::string bus_prefix ("");
+	int host_index = 0;
 
 	size_t index_of = device_sys_path.find("/ata");
 	if (index_of != std::string::npos) {
-		host_prefix.append(device_sys_path.substr(0, index_of + 4));
-		host_index = device_sys_path.at(index_of + 10);
-		use_ata = true;
+		bus_prefix.append(device_sys_path.substr(0, index_of + 4));
+		host_index = device_sys_path.at(index_of + 10) - '0';
 	} else {
-		index_of = device_sys_path.find("/host") + 5;
-		host_prefix.append(device_sys_path.substr(0, index_of));
-		host_index = device_sys_path.at(index_of);
+		index_of = device_sys_path.find("/host");
+		bus_prefix.append(device_sys_path.substr(0, index_of));
+		host_index = device_sys_path.at(index_of) - '0';
 	}
 
-	std::string dev_host_sys_path (sys_class_prefix);
-	dev_host_sys_path.append(1, host_index);
-	udev_device* dev_host = udev_device_new_from_syspath(udev, dev_host_sys_path.c_str());
-	int unique_id = atoi(udev_device_get_sysattr_value(dev_host, "unique_id"));
-	int scsi_host_index = unique_id - 1;
-	int offset = 0;
+	int scsi_host_index = -1;
+	for (int i = 0; i <= host_index; i++) {
+		std::string dev_path (bus_prefix);
+		dev_path.append(1, '0' + i);
+		dev_path.append("/host");
+		dev_path.append(1, '0' + i);
 
-	for (char index = host_index; index >= '0'; index--)
-	{
-		std::string dev_sys_path (sys_class_prefix);
-		dev_sys_path.append(1, index);
-
-		std::string dev_path (host_prefix);
-
-		if (use_ata) {
-			dev_path.append(1, index + 1);
-			dev_path.append("/host");
+		udev_device* dev_host = udev_device_new_from_syspath(udev, dev_path.c_str());
+		if (dev_host) {
+			scsi_host_index++;
 		}
-
-		dev_path.append(1, index);
-
-		udev_device* dev_sys_class = udev_device_new_from_syspath(udev, dev_sys_path.c_str());
-		dev_host = udev_device_new_from_syspath(udev, dev_path.c_str());
-
-		if (dev_sys_class && !dev_host) offset++;
 	}
-
-	scsi_host_index -= offset;
 
 	return scsi_host_index;
 }
