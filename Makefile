@@ -6,7 +6,7 @@ CXX = g++
 FLAGS = -Wall -O2
 CFLAGS = $(FLAGS)
 CXXFLAGS = $(CFLAGS)
-LDFLAGS = -ludev
+LDFLAGS = -ludev -ldl -lpthread
 
 # build libraries and options
 all: clean mediasmartserverd

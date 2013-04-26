@@ -286,12 +286,17 @@ int DeviceMonitor::scsiHostIndex_( udev_device* device ) {
 	udev* udev = udev_device_get_udev(device);
 	std::string device_sys_path (udev_device_get_syspath(device));
 	std::string bus_prefix ("");
+
+	bool use_ata = false;
 	int host_index = 0;
+	int bus_index_correction = 0;
 
 	size_t index_of = device_sys_path.find("/ata");
 	if (index_of != std::string::npos) {
 		bus_prefix.append(device_sys_path.substr(0, index_of + 4));
 		host_index = device_sys_path.at(index_of + 10) - '0';
+		bus_index_correction = device_sys_path.at(index_of + 4) - '0' - host_index;
+		use_ata = true;
 	} else {
 		index_of = device_sys_path.find("/host");
 		bus_prefix.append(device_sys_path.substr(0, index_of));
@@ -301,7 +306,11 @@ int DeviceMonitor::scsiHostIndex_( udev_device* device ) {
 	int scsi_host_index = -1;
 	for (int i = 0; i <= host_index; i++) {
 		std::string dev_path (bus_prefix);
-		dev_path.append(1, '0' + i);
+
+		if (use_ata) {
+			dev_path.append(1, '0' + bus_index_correction + i);
+		}
+
 		dev_path.append("/host");
 		dev_path.append(1, '0' + i);
 

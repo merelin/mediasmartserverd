@@ -89,8 +89,7 @@ void drop_priviledges( ) {
 	const passwd* pw = getpwnam( "nobody" );
 	if ( !pw ) return; // :(
 	
-	setgid( pw->pw_gid );
-	setuid( pw->pw_uid );
+	if (setgid( pw->pw_gid ) && setuid( pw->pw_uid ));
 }
 
 /////////////////////////////////////////////////////////////////////////////

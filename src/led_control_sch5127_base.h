@@ -141,7 +141,7 @@ protected:
 		// sanity check the address
 		// (only bits 15:6 provide an address while the rest are reserved as always being zero)
 		if ( 0x1 != (io_lpc_gpiobase_ & 0xFFFF007F) ) {
-			if ( debug || verbose > 0 ) std::cerr << "LedHpEx48X: Expected 0x1 but got " << (io_lpc_gpiobase_ & 0xFFFF007F) << '\n';
+			if ( debug || verbose > 0 ) std::cerr << Desc() << ": Expected 0x1 but got " << (io_lpc_gpiobase_ & 0xFFFF007F) << '\n';
 			return false;
 		}
 		io_lpc_gpiobase_ &= ~0x1; // remove hardwired 1 which indicates I/O space
@@ -177,7 +177,7 @@ protected:
 		// retrieve identification
 		outb( IDX_ID, sio_addr );
 		const unsigned int device_id = inb( sio_data );
-		if ( debug ) std::cout << "LedHpEx48X: Device 0x" << std::hex << device_id << std::dec << "\n";
+		if ( debug ) std::cout << Desc() << ": Device 0x" << std::hex << device_id << std::dec << "\n";
 		
 		// 
 		{
@@ -191,7 +191,7 @@ protected:
 				ioperm( sio_data, 1, 0 );
 				
 				// and switch to these if we are told to
-				if ( debug ) std::cout << "LedHpEx48X: Using 0x4e\n";
+				if ( debug ) std::cout << Desc() << ": Using 0x4e\n";
 				sio_addr = 0x4e;
 				sio_data = sio_addr + 1;
 				
