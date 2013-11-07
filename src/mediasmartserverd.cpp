@@ -138,9 +138,9 @@ LedControlPtr get_led_interface( ) {
 			control.reset( new LedAcerAltosM2 );
 			if ( control->Init( ) ) return control;
 		}
-		if (strcmp(productName, "Aspire easyStore H341") == 0) {
-			// H341
-			if(verbose > 0) cout << "Recognized ProductName: \"Aspire easyStore H341\"\n";
+		if (strcmp(productName, "Aspire easyStore H341") == 0 || strcmp(productName, "Aspire easyStore H342") == 0) {
+			// H341 or H342
+			if(verbose > 0) cout << "Recognized ProductName: \"" << productName << "\"\n";
 			control.reset( new LedAcerH341 );
 			if ( control->Init( ) ) return control;
 		}
