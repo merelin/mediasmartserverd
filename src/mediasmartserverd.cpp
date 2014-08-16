@@ -37,6 +37,10 @@
 ///
 /// 2012-02-07 - Kai Hendrik Behrends
 ///  - Added update monitor
+///
+/// 2014-08-16 - Kai Hendrik Behrends
+///  - Added support for the Lenovo IdeaCenter D400 as suggested by Gordon seen here:
+///    http://kaibehrends.org/ubuntu-enable-acer-aspire-easystore-h341-leds/#comment-1510585114
 
 //- includes
 #include "errno_exception.h"
@@ -142,6 +146,15 @@ LedControlPtr get_led_interface( ) {
 			// H341 or H342
 			if(verbose > 0) cout << "Recognized ProductName: \"" << productName << "\"\n";
 			control.reset( new LedAcerH341 );
+			if ( control->Init( ) ) return control;
+		}
+	}
+	else if (strcmp(systemVendor, "LENOVO") == 0) {
+		if(verbose > 0) cout << "Recognized SystemVendor: \"Lenovo\"\n";
+		if (strcmp(productName, "IdeaCentre D400 10023") == 0) {
+			// IdeaCentre D400
+			if(verbose > 0) cout << "Recognized ProductName: \"IdeaCentre D400 10023\"\n";
+			control.reset( new LedAcerH340 ); //Compatiple with H340.
 			if ( control->Init( ) ) return control;
 		}
 	}
