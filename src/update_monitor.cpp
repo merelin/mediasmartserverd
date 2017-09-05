@@ -270,7 +270,7 @@ bool UpdateMonitor::GetUpdateStatus(int* update_count, int* security_update_coun
 bool UpdateMonitor::IsRebootRequired()
 {
 	std::ifstream reboot_required("/var/run/reboot-required");
-	return reboot_required; //Returns whether file exists.
+	return reboot_required.good(); //Returns whether file exists.
 }
 
 /**
