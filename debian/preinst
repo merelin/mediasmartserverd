@@ -16,8 +16,10 @@ set -e
 
 case "$1" in
     install|upgrade)
-        if [ -x "/etc/init.d/mediasmartserver" ]; then
-            if [ -x "`which invoke-rc.d 2>/dev/null`" ]; then
+        if [ -x "/etc/init.d/mediasmartserver" ]
+        then
+            if [ -x "`which invoke-rc.d 2>/dev/null`" ]
+            then
                 invoke-rc.d mediasmartserver stop > /dev/null
             else
                 /etc/init.d/mediasmartserver stop > /dev/null
@@ -25,6 +27,19 @@ case "$1" in
 
             rm /etc/init.d/mediasmartserver > /dev/null
             update-rc.d mediasmartserver remove > /dev/null
+        else
+            INIT=$(ps --pid 1 | grep -q systemd && echo 'systemd' || echo 'upstart')
+            case "$INIT" in
+                systemd)
+                    systemctl stop mediasmartserver
+                    systemctl disable mediasmartserver
+                    systemctl daemon-reload
+                    ;;
+
+                *)
+                    stop mediasmartserver
+                    ;;
+            esac
         fi
     ;;
 

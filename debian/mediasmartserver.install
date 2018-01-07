@@ -1,2 +1,3 @@
 mediasmartserverd /usr/sbin
+lib/systemd/system/mediasmartserver.service /lib/systemd/system
 etc/init/mediasmartserver.conf /etc/init

@@ -1,9 +1,9 @@
 [Unit]
 Description=MediaSmartServer
-After=udev.service
 
 [Service]
 ExecStart=/usr/sbin/mediasmartserverd --activity --update-monitor
+Restart=always
 
 [Install]
 WantedBy=multi-user.target
